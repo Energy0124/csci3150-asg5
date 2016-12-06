@@ -97,13 +97,17 @@ void deconstruct_manager(manager_t *self) {
 uint32_t access(manager_t *self, uint32_t addr) {
     uint32_t offset = get_last_n_bits(addr, log2i(self->_frame_size));
     uint32_t page = get_mid_n_bits(addr, log2i(self->_page_num), log2i(self->_frame_size));
+    uint32_t address;
+    int32_t frame;
     if ((self->_page_table)[page] != -1) { //page already have a frame
         add_access(self, page);
-        return (uint32_t) (self->_page_table)[page];
+        frame=(uint32_t) (self->_page_table)[page];
+        address= offset | (frame<<log2i(self->_frame_size));
+        printf("address: %3d, page: %3d, frame: %3d, offset: %3d \n", address, page, (self->_page_table)[page], offset);
+        return address;
     }
     //page don't have a frame yet, try find a frame
-    uint32_t address;
-    int32_t frame = get_free_frame(self);
+     frame = get_free_frame(self);
     if (frame != -1) {      //found free frame, great!
         (self->_frame_table)[frame] = page;
         (self->_page_table)[page] = frame;
@@ -117,7 +121,9 @@ uint32_t access(manager_t *self, uint32_t addr) {
         (self->_frame_table)[lru_frame] = page;
         add_access(self, page);
         address = offset | (lru_frame<<log2i(self->_frame_size));
+        frame=lru_frame;
     }
+    printf("address: %3d, page: %3d, frame: %3d, offset: %3d \n", address, page, frame, offset);
     return address;
 
 }
