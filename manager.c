@@ -35,12 +35,12 @@ int32_t get_lru_time(manager_t *self, uint32_t page) {
 
 void add_access(manager_t *self, uint32_t page) {
     int i;
-    for (i = 0; i < self->_lru_parameter - 1; ++i) {
-        get_2d(self->_access_table, self->_lru_parameter, page, i + 1) = get_2d(self->_access_table,
-                                                                                self->_lru_parameter, page, i);
+    for (i = self->_lru_parameter - 1; i > 0; --i) {
+        get_2d(self->_access_table, self->_lru_parameter, page, i) = get_2d(self->_access_table,
+                                                                            self->_lru_parameter, page, i - 1);
     }
     get_2d(self->_access_table, self->_lru_parameter, page, 0) = ++(self->_current_timestamp);
-    if ((self->_access_table_row_size)[page] < self->_lru_parameter)(self->_access_table_row_size)[page]++;
+    if ((self->_access_table_row_size)[page] < self->_lru_parameter)(self->_access_table_row_size)[page] += 1;
 }
 
 int32_t get_free_frame(manager_t *self) {
@@ -61,23 +61,23 @@ manager_t *new_memory_manager(uint32_t page_num, uint32_t frame_num, uint32_t fr
     // TODO: initiate other members you add
     self->_page_table = malloc(sizeof(int32_t) * page_num);
     int i;
-    for ( i = 0; i < page_num; ++i) {
-        (self->_page_table)[i]=-1;
+    for (i = 0; i < page_num; ++i) {
+        (self->_page_table)[i] = -1;
     }
-   // memset(self->_page_table, -1, page_num);
+    // memset(self->_page_table, -1, page_num);
     self->_frame_table = malloc(sizeof(int32_t) * frame_num);
-    for ( i = 0; i < frame_num; ++i) {
-        (self->_frame_table)[i]=-1;
+    for (i = 0; i < frame_num; ++i) {
+        (self->_frame_table)[i] = -1;
     }
     //memset(self->_frame_table, -1, frame_num);
     self->_access_table = malloc(sizeof(int32_t) * page_num * lru_parameter);
-    for ( i = 0; i < page_num * lru_parameter; ++i) {
-        (self->_access_table)[i]=-1;
+    for (i = 0; i < page_num * lru_parameter; ++i) {
+        (self->_access_table)[i] = -1;
     }
     //memset(self->_page_table, -1, page_num * lru_parameter);
     self->_access_table_row_size = malloc(sizeof(int32_t) * page_num);
-    for ( i = 0; i < page_num; ++i) {
-        (self->_access_table_row_size)[i]=0;
+    for (i = 0; i < page_num; ++i) {
+        (self->_access_table_row_size)[i] = 0;
     }
     //memset(self->_access_table_row_size, 0, page_num);
     self->_current_timestamp = -1;
@@ -97,8 +97,10 @@ void deconstruct_manager(manager_t *self) {
 uint32_t access(manager_t *self, uint32_t addr) {
     uint32_t offset = get_last_n_bits(addr, log2i(self->_frame_size));
     uint32_t page = get_mid_n_bits(addr, log2i(self->_page_num), log2i(self->_frame_size));
-    if ((self->_page_table)[page] != -1) //page already have a frame
+    if ((self->_page_table)[page] != -1) { //page already have a frame
+        add_access(self, page);
         return (uint32_t) (self->_page_table)[page];
+    }
     //page don't have a frame yet, try find a frame
     uint32_t address;
     int32_t frame = get_free_frame(self);
