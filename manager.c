@@ -64,22 +64,18 @@ manager_t *new_memory_manager(uint32_t page_num, uint32_t frame_num, uint32_t fr
     for (i = 0; i < page_num; ++i) {
         (self->_page_table)[i] = -1;
     }
-    // memset(self->_page_table, -1, page_num);
     self->_frame_table = malloc(sizeof(int32_t) * frame_num);
     for (i = 0; i < frame_num; ++i) {
         (self->_frame_table)[i] = -1;
     }
-    //memset(self->_frame_table, -1, frame_num);
     self->_access_table = malloc(sizeof(int32_t) * page_num * lru_parameter);
     for (i = 0; i < page_num * lru_parameter; ++i) {
         (self->_access_table)[i] = -1;
     }
-    //memset(self->_page_table, -1, page_num * lru_parameter);
     self->_access_table_row_size = malloc(sizeof(int32_t) * page_num);
     for (i = 0; i < page_num; ++i) {
         (self->_access_table_row_size)[i] = 0;
     }
-    //memset(self->_access_table_row_size, 0, page_num);
     self->_current_timestamp = 0;
     return self;
 }
@@ -103,8 +99,6 @@ uint32_t access(manager_t *self, uint32_t addr) {
         add_access(self, page);
         frame = (uint32_t) (self->_page_table)[page];
         address = offset | (frame << log2i(self->_frame_size));
-        // printf("address: %3d, page: %3d, frame: %3d, offset: %3d \n", address, page, (self->_page_table)[page], offset);
-        //return address;
     } else {
         //page don't have a frame yet, try find a frame
         frame = get_free_frame(self);
@@ -124,8 +118,8 @@ uint32_t access(manager_t *self, uint32_t addr) {
             frame = lru_frame;
         }
     }
-    printf("time: %3d, address: %5d, page: %3d, frame: %3d, offset: %3d \n", self->_current_timestamp, address, page,
-           frame, offset);
+   /* printf("time: %3d, address: %5d, page: %3d, frame: %3d, offset: %3d \n", self->_current_timestamp, address, page,
+           frame, offset);*/
     return address;
 
 }
