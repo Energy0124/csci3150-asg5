@@ -51,6 +51,21 @@ int32_t get_free_frame(manager_t *self) {
     return -1;
 }
 
+uint32_t get_lru_page(manager_t *self) {
+    uint32_t i;
+    int32_t lru_time = -1;
+    uint32_t lru_page = 0;
+    for (i = 0; i < self->_frame_num; ++i) {
+        int32_t time = get_lru_time(self, (uint32_t) (self->_frame_table)[i]);
+        if (lru_time == -1 || time < lru_time) {
+            lru_time = time;
+            lru_page = (uint32_t) (self->_frame_table)[i];
+        }
+    }
+    return lru_page;
+}
+
+
 // Instantiate a manager_t
 manager_t *new_memory_manager(uint32_t page_num, uint32_t frame_num, uint32_t frame_size, uint32_t lru_parameter) {
     manager_t *self = malloc(sizeof(manager_t));
@@ -108,35 +123,15 @@ uint32_t access(manager_t *self, uint32_t addr) {
             add_access(self, page);
             address = offset | (frame << log2i(self->_frame_size));
         } else {     //no free frame, damn it I have to code many more lines
-            uint32_t lru_page = get_lru_page(self);  //find a lru page
-            uint32_t lru_frame = (uint32_t) (self->_page_table)[lru_page];
+            uint32_t lru_page = get_lru_page(self);  //find the lru page
+            frame = (self->_page_table)[lru_page]; //get the corresponding frame of the lru page
             (self->_page_table)[lru_page] = -1; //remove the page from frame
-            (self->_page_table)[page] = lru_frame; //swap the frame with the new accessed page
-            (self->_frame_table)[lru_frame] = page;
+            (self->_page_table)[page] = frame; //swap the frame with the new accessed page
+            (self->_frame_table)[frame] = page;
             add_access(self, page);
-            address = offset | (lru_frame << log2i(self->_frame_size));
-            frame = lru_frame;
+            address = offset | (frame << log2i(self->_frame_size));
         }
     }
-   /* printf("time: %3d, address: %5d, page: %3d, frame: %3d, offset: %3d \n", self->_current_timestamp, address, page,
-           frame, offset);*/
+//    printf("time: %3d, address: %5d, page: %3d, frame: %3d, offset: %3d \n", self->_current_timestamp, address, page, frame, offset);
     return address;
-
 }
-
-uint32_t get_lru_page(manager_t *self) {
-    uint32_t i;
-    int32_t lru_time = -1;
-    uint32_t lru_page = 0;
-    for (i = 0; i < self->_frame_num; ++i) {
-        int32_t time = get_lru_time(self, (uint32_t) (self->_frame_table)[i]);
-        if (lru_time == -1 || time < lru_time) {
-            lru_time = time;
-            lru_page = (uint32_t) (self->_frame_table)[i];
-        }
-    }
-    return lru_page;
-}
-
-
-
