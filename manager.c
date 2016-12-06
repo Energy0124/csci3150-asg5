@@ -108,14 +108,15 @@ uint32_t access(manager_t *self, uint32_t addr) {
         (self->_frame_table)[frame] = page;
         (self->_page_table)[page] = frame;
         add_access(self, page);
-        address = offset | frame;
+        address = offset | (frame<<log2i(self->_frame_size));
     } else {     //no free frame, damn it I have to code many more lines
         uint32_t lru_page = get_lru_page(self);  //find a lru page
         uint32_t lru_frame = (uint32_t) (self->_page_table)[lru_page];
         (self->_page_table)[lru_page] = -1; //remove the page from frame
-        (self->_frame_table)[lru_frame] = page; //swap the frame with the new accessed page
+        (self->_page_table)[page] = lru_frame; //swap the frame with the new accessed page
+        (self->_frame_table)[lru_frame] = page;
         add_access(self, page);
-        address = offset | lru_frame;
+        address = offset | (lru_frame<<log2i(self->_frame_size));
     }
     return address;
 
