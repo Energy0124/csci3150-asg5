@@ -80,7 +80,7 @@ manager_t *new_memory_manager(uint32_t page_num, uint32_t frame_num, uint32_t fr
         (self->_access_table_row_size)[i] = 0;
     }
     //memset(self->_access_table_row_size, 0, page_num);
-    self->_current_timestamp = -1;
+    self->_current_timestamp = 0;
     return self;
 }
 
@@ -101,29 +101,31 @@ uint32_t access(manager_t *self, uint32_t addr) {
     int32_t frame;
     if ((self->_page_table)[page] != -1) { //page already have a frame
         add_access(self, page);
-        frame=(uint32_t) (self->_page_table)[page];
-        address= offset | (frame<<log2i(self->_frame_size));
-        printf("address: %3d, page: %3d, frame: %3d, offset: %3d \n", address, page, (self->_page_table)[page], offset);
-        return address;
+        frame = (uint32_t) (self->_page_table)[page];
+        address = offset | (frame << log2i(self->_frame_size));
+        // printf("address: %3d, page: %3d, frame: %3d, offset: %3d \n", address, page, (self->_page_table)[page], offset);
+        //return address;
+    } else {
+        //page don't have a frame yet, try find a frame
+        frame = get_free_frame(self);
+        if (frame != -1) {      //found free frame, great!
+            (self->_frame_table)[frame] = page;
+            (self->_page_table)[page] = frame;
+            add_access(self, page);
+            address = offset | (frame << log2i(self->_frame_size));
+        } else {     //no free frame, damn it I have to code many more lines
+            uint32_t lru_page = get_lru_page(self);  //find a lru page
+            uint32_t lru_frame = (uint32_t) (self->_page_table)[lru_page];
+            (self->_page_table)[lru_page] = -1; //remove the page from frame
+            (self->_page_table)[page] = lru_frame; //swap the frame with the new accessed page
+            (self->_frame_table)[lru_frame] = page;
+            add_access(self, page);
+            address = offset | (lru_frame << log2i(self->_frame_size));
+            frame = lru_frame;
+        }
     }
-    //page don't have a frame yet, try find a frame
-     frame = get_free_frame(self);
-    if (frame != -1) {      //found free frame, great!
-        (self->_frame_table)[frame] = page;
-        (self->_page_table)[page] = frame;
-        add_access(self, page);
-        address = offset | (frame<<log2i(self->_frame_size));
-    } else {     //no free frame, damn it I have to code many more lines
-        uint32_t lru_page = get_lru_page(self);  //find a lru page
-        uint32_t lru_frame = (uint32_t) (self->_page_table)[lru_page];
-        (self->_page_table)[lru_page] = -1; //remove the page from frame
-        (self->_page_table)[page] = lru_frame; //swap the frame with the new accessed page
-        (self->_frame_table)[lru_frame] = page;
-        add_access(self, page);
-        address = offset | (lru_frame<<log2i(self->_frame_size));
-        frame=lru_frame;
-    }
-    printf("address: %3d, page: %3d, frame: %3d, offset: %3d \n", address, page, frame, offset);
+    printf("time: %3d, address: %5d, page: %3d, frame: %3d, offset: %3d \n", self->_current_timestamp, address, page,
+           frame, offset);
     return address;
 
 }
@@ -136,7 +138,7 @@ uint32_t get_lru_page(manager_t *self) {
         int32_t time = get_lru_time(self, (uint32_t) (self->_frame_table)[i]);
         if (lru_time == -1 || time < lru_time) {
             lru_time = time;
-            lru_page = i;
+            lru_page = (uint32_t) (self->_frame_table)[i];
         }
     }
     return lru_page;
