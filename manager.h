@@ -23,4 +23,8 @@ void deconstruct_manager(manager_t* self);
 // TODO: return the physical address of the logical address 
 uint32_t access(manager_t* self, uint32_t addr);
 
-static inline int log2i(unsigned int x);
+static inline uint32_t log2i(uint32_t x);
+
+uint32_t getLastNBits(uint32_t value, uint32_t n);
+
+uint32_t getMidNBits(uint32_t value, uint32_t n, uint32_t offset);
