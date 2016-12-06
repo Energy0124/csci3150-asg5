@@ -7,7 +7,7 @@
 
 #define get_2d(a, w, row, column) ((a)[(row) * (w) + (column)])
 
-uint32_t log2i(uint32_t x) {
+static inline uint32_t log2i(uint32_t x) {
     if (x < 0) { return 0; }
     return sizeof(uint32_t) * 8 - __builtin_clz(x) - 1;
 }
