@@ -5,9 +5,17 @@
 #include <string.h>
 #include "manager.h"
 
+
+
+
+int log2i(unsigned int x) {
+    if (x < 0) { return 0; }
+    return sizeof(unsigned int) * 8 - __builtin_clz(x) - 1;
+}
+
 // Instantiate a manager_t
-manager_t* new_memory_manager(uint32_t page_num, uint32_t frame_num, uint32_t frame_size, uint32_t lru_parameter) {
-    manager_t* self = malloc(sizeof(manager_t));
+manager_t *new_memory_manager(uint32_t page_num, uint32_t frame_num, uint32_t frame_size, uint32_t lru_parameter) {
+    manager_t *self = malloc(sizeof(manager_t));
     self->_page_num = page_num;
     self->_frame_num = frame_num;
     self->_frame_size = frame_size;
@@ -17,12 +25,13 @@ manager_t* new_memory_manager(uint32_t page_num, uint32_t frame_num, uint32_t fr
 }
 
 // Free manager_t
-void deconstruct_manager(manager_t* self) {
+void deconstruct_manager(manager_t *self) {
     free(self);
     // TODO: free other members you add if in need
 }
 
 // TODO: return the physical address of the logical address 
-uint32_t access(manager_t* self,  uint32_t addr) {
-    return 0; 
+uint32_t access(manager_t *self, uint32_t addr) {
+    printf("%d\n", log2i(addr));
+    return 0;
 }
